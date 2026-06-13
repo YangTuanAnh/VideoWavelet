@@ -7,8 +7,17 @@ import open_clip
 import pandas as pd
 from pydantic import BaseModel
 from typing import List
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 index = faiss.read_index(str(DATA_DIR / "faiss.index"))
 df = pd.read_csv(DATA_DIR / "index.csv")
@@ -24,13 +33,12 @@ class Result(BaseModel):
     video: str
     scene: int
     frame: int
-    image_path: str
 
 @app.get("/")
 async def read_root():
     return {"Hello": "World"}
 
-@app.post("/search")
+@app.get("/search")
 async def search(query: str, k: int = 10) -> List[Result]:
     text = tokenizer([query])
 
@@ -48,7 +56,6 @@ async def search(query: str, k: int = 10) -> List[Result]:
             video=row['video'],
             scene=row['scene'],
             frame=row['frame'],
-            image_path=row['image_path']
         ) for score, (idx, row) in zip(D[0], df.loc[I[0]].iterrows())
     ]
 

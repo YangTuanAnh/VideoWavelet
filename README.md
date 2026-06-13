@@ -17,9 +17,9 @@ python -m utils.faiss
 ```
 
 ## Init component code
-NextJS and Shacdn is used for rendering, might use FastAPI for retrieval and data fetching
+NextJS and Shadcn is used for rendering, might use FastAPI for retrieval and data fetching
 ```sh
-pnpm dlx shadcn@latest add card sidebar input-group table
+pnpm dlx shadcn@latest add sidebar input-group table badge spinner item popover radio-group label
 ```
 ## Backend server
 Runs queries and fetches assets

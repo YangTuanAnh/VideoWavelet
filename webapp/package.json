@@ -16,6 +16,7 @@
     "next": "16.2.9",
     "radix-ui": "^1.5.0",
     "react": "19.2.4",
+    "react-csv-downloader": "^3.3.0",
     "react-dom": "19.2.4",
     "shadcn": "^4.11.0",
     "tailwind-merge": "^3.6.0",
