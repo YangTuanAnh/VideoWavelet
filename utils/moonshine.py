@@ -2,6 +2,8 @@ import os
 import glob
 import subprocess
 from pathlib import Path
+from tqdm import tqdm
+import pandas as pd
 
 from moonshine_voice import (
     Transcriber,
@@ -21,7 +23,7 @@ if __name__ == "__main__":
 
     os.makedirs(SUBTITLES_DIR, exist_ok=True)
 
-    for video_path in files:
+    for video_path in tqdm(files):
         stem = Path(video_path).stem
         audio_path = DATA_DIR / "tmp.wav"
 
@@ -42,13 +44,16 @@ if __name__ == "__main__":
         transcript = transcriber.transcribe_without_streaming(
             audio_data, sample_rate=sample_rate, flags=0
         )
-        text = ''
+        data = []
         for line in transcript.lines:
-            text += f"[{line.start_time:.2f}s - {line.start_time + line.duration:.2f}s] {line.text}"
-            text += '\n'
+            data.append({
+                "start_time": line.start_time,
+                "end_time": line.start_time + line.duration,
+                "text": line.text
+            })
+        df = pd.DataFrame(data)
 
-        subtitle_path = SUBTITLES_DIR / f"{stem}.txt"
-        with open(subtitle_path, "w", encoding="utf-8") as f:
-            f.write(text)
+        subtitle_path = SUBTITLES_DIR / f"{stem}-Subtitles.csv"
+        df.to_csv(subtitle_path, encoding="utf-8")
 
     print("Done with subtitles!")

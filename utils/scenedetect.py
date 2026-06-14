@@ -1,6 +1,7 @@
 import os
 import glob
 import subprocess
+from tqdm import tqdm
 from .config import VIDEO_DIR, SCENES_DIR, FRAMES_DIR, video_ext
 
 if __name__ == "__main__":

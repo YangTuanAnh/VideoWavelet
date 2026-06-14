@@ -10,16 +10,16 @@ uv pip install scenedetect moonshine-voice open_clip_torch faiss-cpu pandas "fas
 
 ## Preprocessing
 ```py
-python -m utils.keyframes
-python -m utils.subtitles
-python -m utils.clip
+python -m utils.scenedetect
+python -m utils.moonshine
+python -m utils.siglip2
 python -m utils.faiss
 ```
 
 ## Init component code
 NextJS and Shadcn is used for rendering, might use FastAPI for retrieval and data fetching
 ```sh
-pnpm dlx shadcn@latest add sidebar input-group table badge spinner item popover radio-group label
+pnpm dlx shadcn@latest add sidebar input-group table badge spinner item popover radio-group label context-menu hover-card
 ```
 ## Backend server
 Runs queries and fetches assets

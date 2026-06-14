@@ -7,8 +7,8 @@ SCENES_DIR = DATA_DIR / "scenes"
 SUBTITLES_DIR = DATA_DIR / "subtitles"
 EMB_DIR = DATA_DIR / "embeddings"
 
-CLIP_MODEL_NAME = 'hf-hub:laion/CLIP-ViT-B-32-laion2B-s34B-b79K'
-DIM_SIZE = 512
+CLIP_MODEL_NAME = 'hf-hub:timm/ViT-B-32-SigLIP2-256'
+DIM_SIZE = 768
 BATCH_SIZE = 64
 
 video_ext = ["*.mp4", "*.mkv", "*.avi", "*.mov", "*.webm", "*.flv"]
