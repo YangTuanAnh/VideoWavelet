@@ -222,7 +222,7 @@ async def search_sequence(request: SequenceQuery) -> List[SequenceResult]:
 
             temporal_distance = sum(gaps)
             total_score = sum(r["score"] for r in sequence)
-            score = total_score + 0.1 * temporal_distance
+            score = total_score + 0.01 * temporal_distance
 
             matches.append(
                 SequenceResult(
