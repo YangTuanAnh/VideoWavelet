@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-import faiss             
-from .config import DATA_DIR, CLIP_MODEL_NAME
+import faiss
+from .config import DATA_DIR, CLIP_MODEL_NAME, VQA_MODEL_NAME
 import torch
 import open_clip
 import pandas as pd
@@ -11,7 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 from PIL import Image
 from itertools import product
+from google import genai
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+client = genai.Client(
+    api_key=os.environ["GEMINI_API_KEY"]
+)
 app = FastAPI()
 
 app.add_middleware(
@@ -30,6 +38,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model.eval().to(device)
 tokenizer = open_clip.get_tokenizer(CLIP_MODEL_NAME)
 
+
 class Result(BaseModel):
     score: float
     index: int
@@ -38,9 +47,11 @@ class Result(BaseModel):
     frame: int
     subtitles: str
 
+
 class SequenceQuery(BaseModel):
     queries: List[str]
     k: int = 50
+
 
 class SequenceResult(BaseModel):
     video: str
@@ -49,9 +60,17 @@ class SequenceResult(BaseModel):
     subtitles: List[str]
     score: float
 
+
+class VQARequest(BaseModel):
+    video: str
+    scene: int
+    question: str
+
+
 @app.get("/")
 async def read_root():
     return {"Hello": "World"}
+
 
 def search_text_internal(query: str, k: int):
     text = tokenizer([query])
@@ -73,11 +92,12 @@ def search_text_internal(query: str, k: int):
                 "video": row["video"],
                 "scene": int(row["scene"]),
                 "frame": int(row["frame"]),
-                "subtitles": "" if pd.isna(row['subtitles']) else str(row['subtitles'])
+                "subtitles": "" if pd.isna(row["subtitles"]) else str(row["subtitles"]),
             }
         )
 
     return results
+
 
 @app.get("/search_text")
 async def search_text(query: str, k: int = 10):
@@ -88,16 +108,14 @@ async def search_text(query: str, k: int = 10):
             video=r["video"],
             scene=r["scene"],
             frame=r["frame"],
-            subtitles=r["subtitles"]
+            subtitles=r["subtitles"],
         )
         for r in search_text_internal(query, k)
     ]
 
+
 @app.post("/search_image")
-async def search_image(
-    image: UploadFile = File(...),
-    k: int = 10
-) -> List[Result]:
+async def search_image(image: UploadFile = File(...), k: int = 10) -> List[Result]:
 
     try:
         img = Image.open(image.file).convert("RGB")
@@ -121,14 +139,19 @@ async def search_image(
             video=row["video"],
             scene=int(row["scene"]),
             frame=int(row["frame"]),
-            subtitles="" if pd.isna(row["subtitles"]) else str(row["subtitles"])
+            subtitles="" if pd.isna(row["subtitles"]) else str(row["subtitles"]),
         )
         for score, (idx, row) in zip(D[0], df.loc[I[0]].iterrows())
     ]
 
+
 @app.get("/scene_range")
 async def get_range(video: str, scene: int, range: int):
-    rows = df.loc[(df["video"] == video) & (df["scene"] >= scene-range) & (df["scene"] <= scene+range)]
+    rows = df.loc[
+        (df["video"] == video)
+        & (df["scene"] >= scene - range)
+        & (df["scene"] <= scene + range)
+    ]
 
     if rows.empty:
         raise HTTPException(status_code=404, detail="Frame not found in database")
@@ -137,12 +160,14 @@ async def get_range(video: str, scene: int, range: int):
         Result(
             score=0,
             index=idx,
-            video=row['video'],
-            scene=row['scene'],
-            frame=row['frame'],
-            subtitles="" if pd.isna(row['subtitles']) else str(row['subtitles'])
-        ) for (idx, row) in rows.iterrows()
+            video=row["video"],
+            scene=row["scene"],
+            frame=row["frame"],
+            subtitles="" if pd.isna(row["subtitles"]) else str(row["subtitles"]),
+        )
+        for (idx, row) in rows.iterrows()
     ]
+
 
 @app.get("/frame")
 async def get_frame(video: str, scene: int):
@@ -158,15 +183,11 @@ async def get_frame(video: str, scene: int):
 
     return FileResponse(image_path, media_type="image/jpeg")
 
-@app.post("/search_sequence")
-async def search_sequence(
-    request: SequenceQuery
-) -> List[SequenceResult]:
 
-    query_results = [
-        search_text_internal(q, request.k)
-        for q in request.queries
-    ]
+@app.post("/search_sequence")
+async def search_sequence(request: SequenceQuery) -> List[SequenceResult]:
+
+    query_results = [search_text_internal(q, request.k) for q in request.queries]
 
     videos = {}
 
@@ -175,21 +196,17 @@ async def search_sequence(
             video = result["video"]
 
             if video not in videos:
-                videos[video] = [
-                    [] for _ in range(len(request.queries))
-                ]
+                videos[video] = [[] for _ in range(len(request.queries))]
 
             videos[video][query_idx].append(result)
 
     matches = []
 
     for video, groups in videos.items():
-
         if any(len(g) == 0 for g in groups):
             continue
 
         for sequence in product(*groups):
-
             scenes = [r["scene"] for r in sequence]
 
             if scenes != sorted(scenes):
@@ -197,29 +214,22 @@ async def search_sequence(
 
             if len(set(scenes)) != len(scenes):
                 continue
-            
+
             gaps = [
-                sequence[i + 1]["scene"] -
-                sequence[i]["scene"]
+                sequence[i + 1]["scene"] - sequence[i]["scene"]
                 for i in range(len(sequence) - 1)
             ]
 
             temporal_distance = sum(gaps)
-            total_score  = sum(r["score"] for r in sequence)
+            total_score = sum(r["score"] for r in sequence)
             score = total_score + 0.1 * temporal_distance
 
             matches.append(
                 SequenceResult(
                     video=video,
                     scenes=scenes,
-                    frames=[
-                        r["frame"]
-                        for r in sequence
-                    ],
-                    subtitles=[
-                        r["subtitles"]
-                        for r in sequence
-                    ],
+                    frames=[r["frame"] for r in sequence],
+                    subtitles=[r["subtitles"] for r in sequence],
                     score=float(score),
                 )
             )
@@ -227,3 +237,38 @@ async def search_sequence(
     matches.sort(key=lambda x: x.score)
 
     return matches[:100]
+
+
+@app.post("/vqa")
+async def vqa(request: VQARequest):
+
+    rows = df.loc[
+        (df["video"] == request.video)
+        & (df["scene"] == request.scene),
+        "image_path",
+    ]
+
+    if rows.empty:
+        raise HTTPException(
+            status_code=404,
+            detail="Frame not found",
+        )
+
+    image_path = rows.iloc[0]
+
+    image = Image.open(image_path).convert("RGB")
+
+    response = client.models.generate_content(
+        model=VQA_MODEL_NAME,
+        contents=[
+            (
+                "Answer briefly in one sentence. "
+                + request.question
+            ),
+            image,
+        ],
+    )
+
+    return {
+        "answer": response.text
+    }

@@ -44,6 +44,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import { Menubar, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
+import Link from "next/link";
 
 type Frame = {
   score: number
@@ -175,6 +177,23 @@ export default function Home() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
+          <Menubar className="w-full">
+            <MenubarMenu>
+              <MenubarTrigger>
+                <Link href="/">KIS</Link>
+              </MenubarTrigger>
+            </MenubarMenu>
+            <MenubarMenu>
+              <MenubarTrigger>
+                <Link href="/vqa">VQA</Link>
+              </MenubarTrigger>
+            </MenubarMenu>
+            <MenubarMenu>
+              <MenubarTrigger>
+                <Link href="/trake">TRAKE</Link>
+              </MenubarTrigger>
+            </MenubarMenu>
+          </Menubar>
           <h1 className="scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance">
             Video Wavelet V1
           </h1>
@@ -223,7 +242,7 @@ export default function Home() {
           <SidebarGroup>
             <Button variant="outline" onClick={() => fetchData(query, K)}>Search</Button>
           </SidebarGroup>
-                    <SidebarGroup>
+          <SidebarGroup>
 
             <Input
               type="file"

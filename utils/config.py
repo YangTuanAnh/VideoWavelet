@@ -8,6 +8,7 @@ SUBTITLES_DIR = DATA_DIR / "subtitles"
 EMB_DIR = DATA_DIR / "embeddings"
 
 CLIP_MODEL_NAME = 'hf-hub:timm/ViT-B-32-SigLIP2-256'
+VQA_MODEL_NAME = "gemini-3.5-flash"
 DIM_SIZE = 768
 BATCH_SIZE = 64
 

@@ -5,7 +5,7 @@
 python -m venv .venv
 .venv/Scripts/Activate.ps1 # fuck powershell
 pip install uv
-uv pip install scenedetect moonshine-voice open_clip_torch faiss-cpu pandas "fastapi[standard]"
+uv pip install scenedetect moonshine-voice open_clip_torch faiss-cpu pandas "fastapi[standard]" num2words accelerate bitsandbytes>=0.46.1
 ```
 
 ## Preprocessing
@@ -27,4 +27,8 @@ Runs queries and fetches assets
 fastapi dev utils/server.py
 ```
 
-2 main routes: `/search?query=text&k=10` and `/frame?video=L01_V001&scene=1`
+## Checklist
+
+- [x] KIS (Text search, image search, subtitle filtering, range view, top reorder, delete)
+- [x] VQA (VLM inference, answer propagation)
+- [x] TRAKE (sequence matching, temporal penalty, sequence reorder, delete)

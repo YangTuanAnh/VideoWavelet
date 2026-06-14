@@ -10,10 +10,7 @@ import {
 } from "@/components/ui/sidebar"
 
 import {
-    InputGroup,
-    InputGroupAddon,
     InputGroupButton,
-    InputGroupInput,
 } from "@/components/ui/input-group"
 import { FilterIcon } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
@@ -34,18 +31,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import CsvDownloader from 'react-csv-downloader';
 import { Input } from "@/components/ui/input";
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer"
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { Menubar, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
+import Link from "next/link";
 
 type SequenceResult = {
     score: number
@@ -53,16 +42,6 @@ type SequenceResult = {
     scenes: number[]
     frames: number[]
     subtitles: string[]
-}
-
-type Frame = {
-    score: number
-    index: number
-    video: string
-    scene: number
-    frame: number
-    subtitles: string
-    filtered: boolean
 }
 
 const columns: ColumnDef<SequenceResult>[] = [
@@ -157,6 +136,23 @@ export default function Home() {
         <SidebarProvider>
             <Sidebar>
                 <SidebarHeader>
+                    <Menubar className="w-full">
+                        <MenubarMenu>
+                            <MenubarTrigger>
+                                <Link href="/">KIS</Link>
+                            </MenubarTrigger>
+                        </MenubarMenu>
+                        <MenubarMenu>
+                            <MenubarTrigger>
+                                <Link href="/vqa">VQA</Link>
+                            </MenubarTrigger>
+                        </MenubarMenu>
+                        <MenubarMenu>
+                            <MenubarTrigger>
+                                <Link href="/trake">TRAKE</Link>
+                            </MenubarTrigger>
+                        </MenubarMenu>
+                    </Menubar>
                     <h1 className="scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance">
                         Video Wavelet V1 <i className="text-sm">TRAKE</i>
                     </h1>
@@ -164,9 +160,7 @@ export default function Home() {
                 <SidebarContent>
                     <SidebarGroup>
                         <Textarea
-                            placeholder={`Event 1
-                    Event 2
-                    Event 3`}
+                            placeholder={`Event 1\nEvent 2\nEvent 3`}
                             value={queriesText}
                             onChange={(e) =>
                                 setQueriesText(e.target.value)
