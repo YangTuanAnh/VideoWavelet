@@ -10,6 +10,7 @@ from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 from PIL import Image
+from itertools import product
 
 app = FastAPI()
 
@@ -37,12 +38,22 @@ class Result(BaseModel):
     frame: int
     subtitles: str
 
+class SequenceQuery(BaseModel):
+    queries: List[str]
+    k: int = 50
+
+class SequenceResult(BaseModel):
+    video: str
+    scenes: List[int]
+    frames: List[int]
+    subtitles: List[str]
+    score: float
+
 @app.get("/")
 async def read_root():
     return {"Hello": "World"}
 
-@app.get("/search_text")
-async def search_text(query: str, k: int = 10) -> List[Result]:
+def search_text_internal(query: str, k: int):
     text = tokenizer([query])
 
     with torch.no_grad(), torch.autocast(device):
@@ -52,15 +63,34 @@ async def search_text(query: str, k: int = 10) -> List[Result]:
     text_features = text_features.cpu().float().numpy()
     D, I = index.search(text_features, k)
 
+    results = []
+
+    for score, (idx, row) in zip(D[0], df.loc[I[0]].iterrows()):
+        results.append(
+            {
+                "score": float(score),
+                "index": int(idx),
+                "video": row["video"],
+                "scene": int(row["scene"]),
+                "frame": int(row["frame"]),
+                "subtitles": "" if pd.isna(row['subtitles']) else str(row['subtitles'])
+            }
+        )
+
+    return results
+
+@app.get("/search_text")
+async def search_text(query: str, k: int = 10):
     return [
         Result(
-            score=float(score),
-            index=int(idx),
-            video=row["video"],
-            scene=int(row["scene"]),
-            frame=int(row["frame"]),
-            subtitles="" if pd.isna(row['subtitles']) else str(row['subtitles'])
-        ) for score, (idx, row) in zip(D[0], df.loc[I[0]].iterrows())
+            score=r["score"],
+            index=r["index"],
+            video=r["video"],
+            scene=r["scene"],
+            frame=r["frame"],
+            subtitles=r["subtitles"]
+        )
+        for r in search_text_internal(query, k)
     ]
 
 @app.post("/search_image")
@@ -127,3 +157,73 @@ async def get_frame(video: str, scene: int):
         raise HTTPException(status_code=404, detail="Image path is empty")
 
     return FileResponse(image_path, media_type="image/jpeg")
+
+@app.post("/search_sequence")
+async def search_sequence(
+    request: SequenceQuery
+) -> List[SequenceResult]:
+
+    query_results = [
+        search_text_internal(q, request.k)
+        for q in request.queries
+    ]
+
+    videos = {}
+
+    for query_idx, results in enumerate(query_results):
+        for result in results:
+            video = result["video"]
+
+            if video not in videos:
+                videos[video] = [
+                    [] for _ in range(len(request.queries))
+                ]
+
+            videos[video][query_idx].append(result)
+
+    matches = []
+
+    for video, groups in videos.items():
+
+        if any(len(g) == 0 for g in groups):
+            continue
+
+        for sequence in product(*groups):
+
+            scenes = [r["scene"] for r in sequence]
+
+            if scenes != sorted(scenes):
+                continue
+
+            if len(set(scenes)) != len(scenes):
+                continue
+            
+            gaps = [
+                sequence[i + 1]["scene"] -
+                sequence[i]["scene"]
+                for i in range(len(sequence) - 1)
+            ]
+
+            temporal_distance = sum(gaps)
+            total_score  = sum(r["score"] for r in sequence)
+            score = total_score + 0.1 * temporal_distance
+
+            matches.append(
+                SequenceResult(
+                    video=video,
+                    scenes=scenes,
+                    frames=[
+                        r["frame"]
+                        for r in sequence
+                    ],
+                    subtitles=[
+                        r["subtitles"]
+                        for r in sequence
+                    ],
+                    score=float(score),
+                )
+            )
+
+    matches.sort(key=lambda x: x.score)
+
+    return matches[:100]

@@ -62,7 +62,7 @@ const columns: ColumnDef<Frame>[] = [
 ]
 
 export default function Home() {
-  const [K, setK] = useState<number>(10)
+  const [K, setK] = useState<number>(20)
   const [query, setQuery] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false);
   const [answers, setAnswers] = useState<Frame[]>([])
@@ -328,7 +328,7 @@ export default function Home() {
                   })
                 }}
               >
-                Top 1
+                Top
               </Button>
               <Button
                 variant="destructive"
