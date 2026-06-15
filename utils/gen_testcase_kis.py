@@ -2,7 +2,7 @@ from google import genai
 import os
 from dotenv import load_dotenv
 import pandas as pd
-from .config import DATA_DIR, KIS_SEED, VQA_MODEL_NAME
+from .config import DATA_DIR, KIS_SEED, VQA_TESTGEN_MODEL_NAME
 from PIL import Image
 from tqdm import tqdm
 import json
@@ -25,10 +25,10 @@ if __name__ == "__main__":
         image = Image.open(image_path).convert("RGB")
 
         response = client.models.generate_content(
-            model=VQA_MODEL_NAME,
+            model=VQA_TESTGEN_MODEL_NAME,
             contents=[
                 """
-                Describe this image for image retrieval.
+                Describe this image for image retrieval, ignore the fact they come from a news segment.
 
                 Return ONLY valid JSON:
 

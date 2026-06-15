@@ -2,7 +2,7 @@ from google import genai
 import os
 from dotenv import load_dotenv
 import pandas as pd
-from .config import DATA_DIR, TRAKE_SEED, VQA_MODEL_NAME
+from .config import DATA_DIR, TRAKE_SEED, VQA_TESTGEN_MODEL_NAME
 from PIL import Image
 from tqdm import tqdm
 import json
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             continue
 
         response = client.models.generate_content(
-            model=VQA_MODEL_NAME,
+            model=VQA_TESTGEN_MODEL_NAME,
             contents=[
                 f"""
                 These {len(images)} images are consecutive scenes from a video.
@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 - how the actions progress over time
 
                 The query should describe the full sequence rather than
-                individual frames.
+                individual frames, ignore the fact they come from a news segment.
 
                 Example:
                 "a woman walks into a room, picks up a book,
