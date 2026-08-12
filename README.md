@@ -19,7 +19,7 @@ python -m utils.siglip2
 python -m utils.faiss
 ```
 
-Or you can use Kaggle's free GPU resources for preprocessing, reference `utils/videowaveletv2.ipynb` for sample code, just configure the dataset path at `VIDEO_FOLDER_ID` and `VIDEO_DIR`
+Or you can use Kaggle's free GPU resources for preprocessing, reference `utils/videowaveletv1.ipynb` for sample code, just configure the dataset path at `VIDEO_FOLDER_ID` and `VIDEO_DIR`
 
 The extected folder structure after preprocessing:
 ```sh
