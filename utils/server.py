@@ -1,14 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 import faiss
-from .config import DATA_DIR, CLIP_MODEL_NAME, VQA_MODEL_NAME
+from .config import DATA_DIR, CLIP_MODEL_NAME, VQA_MODEL_NAME, PRETRAINED_WEIGHTS
 import torch
 import open_clip
 import pandas as pd
 from pydantic import BaseModel
-from typing import List
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import UploadFile, File
+from fastapi import UploadFile
 from PIL import Image
 from itertools import product
 from google import genai
@@ -17,9 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = genai.Client(
-    api_key=os.environ["GEMINI_API_KEY"]
-)
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 app = FastAPI()
 
 app.add_middleware(
@@ -33,7 +30,9 @@ app.add_middleware(
 index = faiss.read_index(str(DATA_DIR / "faiss.index"))
 df = pd.read_csv(DATA_DIR / "index.csv")
 
-model, preprocess = open_clip.create_model_from_pretrained(CLIP_MODEL_NAME)
+model, preprocess = open_clip.create_model_from_pretrained(
+    CLIP_MODEL_NAME, PRETRAINED_WEIGHTS
+)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.eval().to(device)
 tokenizer = open_clip.get_tokenizer(CLIP_MODEL_NAME)
@@ -49,15 +48,15 @@ class Result(BaseModel):
 
 
 class SequenceQuery(BaseModel):
-    queries: List[str]
+    queries: list[str]
     k: int = 50
 
 
 class SequenceResult(BaseModel):
     video: str
-    scenes: List[int]
-    frames: List[int]
-    subtitles: List[str]
+    scenes: list[int]
+    frames: list[int]
+    subtitles: list[str]
     score: float
 
 
@@ -115,12 +114,9 @@ async def search_text(query: str, k: int = 10):
 
 
 @app.post("/search_image")
-async def search_image(image: UploadFile = File(...), k: int = 10) -> List[Result]:
+async def search_image(image: UploadFile, k: int = 10) -> list[Result]:
 
-    try:
-        img = Image.open(image.file).convert("RGB")
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid image")
+    img = Image.open(image.file).convert("RGB")
 
     image_tensor = preprocess(img).unsqueeze(0).to(device)
 
@@ -185,7 +181,7 @@ async def get_frame(video: str, scene: int):
 
 
 @app.post("/search_sequence")
-async def search_sequence(request: SequenceQuery) -> List[SequenceResult]:
+async def search_sequence(request: SequenceQuery) -> list[SequenceResult]:
 
     query_results = [search_text_internal(q, request.k) for q in request.queries]
 
@@ -243,8 +239,7 @@ async def search_sequence(request: SequenceQuery) -> List[SequenceResult]:
 async def vqa(request: VQARequest):
 
     rows = df.loc[
-        (df["video"] == request.video)
-        & (df["scene"] == request.scene),
+        (df["video"] == request.video) & (df["scene"] == request.scene),
         "image_path",
     ]
 
@@ -261,14 +256,9 @@ async def vqa(request: VQARequest):
     response = client.models.generate_content(
         model=VQA_MODEL_NAME,
         contents=[
-            (
-                "Answer briefly in one sentence. "
-                + request.question
-            ),
+            ("Answer briefly in one sentence. " + request.question),
             image,
         ],
     )
 
-    return {
-        "answer": response.text
-    }
+    return {"answer": response.text}

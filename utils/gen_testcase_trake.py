@@ -24,24 +24,16 @@ if __name__ == "__main__":
         video = row["video"]
         scene = row["scene"]
 
-        scene_rows = (
-            df[
-                (df["video"] == video)
-                & (df["scene"] >= scene - RANGE)
-                & (df["scene"] <= scene + RANGE)
-            ]
-            .sort_values("scene")
-        )
+        scene_rows = df[
+            (df["video"] == video)
+            & (df["scene"] >= scene - RANGE)
+            & (df["scene"] <= scene + RANGE)
+        ].sort_values("scene")
 
         images = []
 
         for _, scene_row in scene_rows.iterrows():
-            try:
-                images.append(
-                    Image.open(scene_row["image_path"]).convert("RGB")
-                )
-            except Exception:
-                pass
+            images.append(Image.open(scene_row["image_path"]).convert("RGB"))
 
         if len(images) == 0:
             continue
@@ -72,7 +64,8 @@ if __name__ == "__main__":
                     "query": "<temporal description>"
                 }}
                 """
-            ] + images,
+            ]
+            + images,
         )
 
         match = re.search(
