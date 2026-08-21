@@ -98,6 +98,30 @@ def search_text_internal(query: str, k: int):
     return results
 
 
+def search_img_internal(img: Image, k: int):
+    image_tensor = preprocess(img).unsqueeze(0).to(device)
+
+    with torch.no_grad(), torch.autocast(device):
+        image_features = model.encode_image(image_tensor)
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+
+    image_features = image_features.cpu().float().numpy()
+
+    D, I = index.search(image_features, k)
+
+    return [
+        {
+            "score": float(score),
+            "index": int(idx),
+            "video": row["video"],
+            "scene": int(row["scene"]),
+            "frame": int(row["frame"]),
+            "subtitles": "" if pd.isna(row["subtitles"]) else str(row["subtitles"]),
+        }
+        for score, (idx, row) in zip(D[0], df.loc[I[0]].iterrows())
+    ]
+
+
 @app.get("/search_text")
 async def search_text(query: str, k: int = 10):
     return [
@@ -115,29 +139,41 @@ async def search_text(query: str, k: int = 10):
 
 @app.post("/search_image")
 async def search_image(image: UploadFile, k: int = 10) -> list[Result]:
-
     img = Image.open(image.file).convert("RGB")
-
-    image_tensor = preprocess(img).unsqueeze(0).to(device)
-
-    with torch.no_grad(), torch.autocast(device):
-        image_features = model.encode_image(image_tensor)
-        image_features /= image_features.norm(dim=-1, keepdim=True)
-
-    image_features = image_features.cpu().float().numpy()
-
-    D, I = index.search(image_features, k)
-
     return [
         Result(
-            score=float(score),
-            index=int(idx),
-            video=row["video"],
-            scene=int(row["scene"]),
-            frame=int(row["frame"]),
-            subtitles="" if pd.isna(row["subtitles"]) else str(row["subtitles"]),
+            score=r["score"],
+            index=r["index"],
+            video=r["video"],
+            scene=r["scene"],
+            frame=r["frame"],
+            subtitles=r["subtitles"],
         )
-        for score, (idx, row) in zip(D[0], df.loc[I[0]].iterrows())
+        for r in search_img_internal(img, k)
+    ]
+
+
+@app.get("/search_frame")
+async def search_frame(video: str, scene: int, k: int = 10) -> list[Result]:
+    rows = df.loc[(df["video"] == video) & (df["scene"] == scene), "image_path"]
+    if rows.empty:
+        raise HTTPException(status_code=404, detail="Frame not found in database")
+
+    image_path = rows.iloc[0]
+    if not image_path:
+        raise HTTPException(status_code=404, detail="Image path is empty")
+
+    img = Image.open(image_path).convert("RGB")
+    return [
+        Result(
+            score=r["score"],
+            index=r["index"],
+            video=r["video"],
+            scene=r["scene"],
+            frame=r["frame"],
+            subtitles=r["subtitles"],
+        )
+        for r in search_img_internal(img, k)
     ]
 
 

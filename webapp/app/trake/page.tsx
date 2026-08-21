@@ -64,11 +64,12 @@ const columns: ColumnDef<SequenceResult>[] = [
 ]
 
 export default function Home() {
-    const [K, setK] = useState<number>(20)
+    const [K, setK] = useState<number>(100)
     const [queriesText, setQueriesText] = useState("")
     const [loading, setLoading] = useState<boolean>(false);
     const [answers, setAnswers] = useState<SequenceResult[]>([])
     const [subtitleFilter, setSubtitleFilter] = useState("")
+    const [videoFilter, setVideoFilter] = useState("")
 
     const [selectedSequences, setSelectedSequences] =
         useState<Set<string>>(new Set())
@@ -82,8 +83,8 @@ export default function Home() {
             a.subtitles.some((s) =>
                 s.toLowerCase().includes(
                     subtitleFilter.toLowerCase()
-                )
-            )
+                ) 
+            ) && (videoFilter == "" || videoFilter.includes(a.video))
     )
 
     const toggleSequence = (
@@ -221,6 +222,12 @@ export default function Home() {
                             value={subtitleFilter}
                             onChange={(e) => setSubtitleFilter(e.target.value)}
                         />
+                        <br/>
+                        <Input
+                        placeholder="Video Filter..."
+                        value={videoFilter}
+                        onChange={(e) => setVideoFilter(e.target.value)}
+                        />
                     </SidebarGroup>
                     <SidebarGroup>
                         <div className="flex gap-2">
@@ -285,6 +292,7 @@ export default function Home() {
                         }))}
                         text="Export"
                         className={buttonVariants()}
+                        noHeader
                     />
                 </SidebarFooter>
             </Sidebar>

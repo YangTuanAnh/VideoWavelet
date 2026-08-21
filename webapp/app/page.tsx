@@ -64,11 +64,12 @@ const columns: ColumnDef<Frame>[] = [
 ]
 
 export default function Home() {
-  const [K, setK] = useState<number>(20)
+  const [K, setK] = useState<number>(100)
   const [query, setQuery] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false);
   const [answers, setAnswers] = useState<Frame[]>([])
   const [subtitleFilter, setSubtitleFilter] = useState("")
+  const [videoFilter, setVideoFilter] = useState("")
 
   const [sceneFrames, setSceneFrames] = useState<Frame[]>([])
   const [selectedFrame, setSelectedFrame] = useState<Frame | null>(null)
@@ -78,7 +79,8 @@ export default function Home() {
   const BACKEND_URL = new URL("http://localhost:8000")
   const RANGE = 2
   const filteredAnswers = answers.filter((a) =>
-    a.subtitles.toLowerCase().includes(subtitleFilter.toLowerCase()) && a.filtered == false
+    a.subtitles.toLowerCase().includes(subtitleFilter.toLowerCase()) && a.filtered == false && 
+    (videoFilter == "" || videoFilter.includes(a.video))
   )
 
   const fetchData = async (query: string, k: number) => {
@@ -173,6 +175,33 @@ export default function Home() {
     }
   };
 
+  const fetchSelectedFrameData = async (selectedFrame: Frame | null) => {
+      if (!selectedFrame) return;
+      try {
+        setLoading(true)
+        setSelectedFrame(null)
+        const response = await fetch(new URL(`search_frame?video=${selectedFrame.video}&scene=${selectedFrame.scene}&k=${K}`, BACKEND_URL))
+        if (!response.ok) throw new Error('Failed to fetch data');
+
+        const data = await response.json();
+        setAnswers(
+          data.map((e: any) => ({
+            score: e.score,
+            index: e.index,
+            video: e.video,
+            scene: e.scene,
+            frame: e.frame,
+            subtitles: e.subtitles ?? "",
+            filtered: false,
+          }))
+        )
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+      
+  }
   return (
     <SidebarProvider>
       <Sidebar>
@@ -276,9 +305,15 @@ export default function Home() {
               value={subtitleFilter}
               onChange={(e) => setSubtitleFilter(e.target.value)}
             />
+            <br/>
+            <Input
+              placeholder="Video Filter..."
+              value={videoFilter}
+              onChange={(e) => setVideoFilter(e.target.value)}
+            />
           </SidebarGroup>
           <SidebarGroup>
-            <div className="flex gap-2">
+            <div className="flex gap-2 py-2">
               <Drawer>
                 <DrawerTrigger asChild>
                   <Button
@@ -363,6 +398,13 @@ export default function Home() {
               >Delete
               </Button>
             </div>
+            <Button
+              variant="outline"
+              disabled={!selectedFrame}
+              onClick={() => fetchSelectedFrameData(selectedFrame)}
+            >
+              Search Selected Image
+            </Button>
           </SidebarGroup>
           <SidebarGroup>
             <DataTable columns={columns} data={filteredAnswers} />
@@ -377,6 +419,7 @@ export default function Home() {
             }))}
             text="Export"
             className={buttonVariants()}
+            noHeader
           />
         </SidebarFooter>
       </Sidebar>

@@ -64,6 +64,7 @@ python -m utils.gen_testcase_trake
 
 ## Webapp - GUI for KIS, VQA, TRAKE tasks and answer export
 ```sh
+cd webapp
 pnpm dev
 ```
 
