@@ -89,7 +89,7 @@ export default function Home() {
     }, [selectedFrame])
 
     const BACKEND_URL = new URL("http://localhost:8000")
-    const RANGE = 2
+    const RANGE = 7
     const filteredAnswers = answers.filter((a) =>
         a.subtitles.toLowerCase().includes(subtitleFilter.toLowerCase()) && a.filtered == false && 
         (videoFilter == "" || videoFilter.includes(a.video))
@@ -270,7 +270,7 @@ export default function Home() {
                         </MenubarMenu>
                     </Menubar>
                     <h1 className="scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance">
-                        Video Wavelet V1 <i className="text-sm">VQA</i>
+                        Video Wavelet <i className="text-sm">VQA</i>
                     </h1>
                 </SidebarHeader>
                 <SidebarContent>
@@ -377,7 +377,7 @@ export default function Home() {
                                         </DrawerDescription>
                                     </DrawerHeader>
 
-                                    <div className={`grid grid-cols-${RANGE * 2 + 1} h-fit`}>
+                                    <div className={`grid grid-cols-5 h-fit overflow-y-auto`}>
                                         {
                                             sceneFrames.map(data => {
                                                 return (
@@ -397,6 +397,9 @@ export default function Home() {
                                                             <div className="mt-1 text-xs text-muted-foreground">
                                                                 {data.subtitles}
                                                             </div>
+                                                            <Button onClick={() => setAnswers([...answers.filter(e => e.index != data.index), data])}>
+                                                                Add to answer
+                                                            </Button>
                                                         </HoverCardContent>
 
                                                     </HoverCard>
@@ -429,19 +432,6 @@ export default function Home() {
                                 }}
                             >
                                 Top
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                disabled={!selectedFrame}
-                                className="flex-auto"
-                                onClick={() => {
-                                    setAnswers(
-                                        answers.map(
-                                            (e) => e === selectedFrame ? { ...e, filtered: true } : e)
-                                    )
-                                    setSelectedFrame(null)
-                                }}
-                            >Delete
                             </Button>
                         </div>
                         <Button
@@ -569,6 +559,18 @@ export default function Home() {
                                     <div className="mt-1 text-xs text-muted-foreground">
                                         {data.subtitles}
                                     </div>
+                                    <Button
+                                    variant="destructive"
+                                    className="flex-auto"
+                                    onClick={() => {
+                                        setAnswers(
+                                        answers.map(
+                                            (e) => e === data ? { ...e, filtered: true } : e)
+                                        )
+                                        setSelectedFrame(null)
+                                    }}
+                                    >Delete
+                                    </Button>
                                 </HoverCardContent>
 
                             </HoverCard>

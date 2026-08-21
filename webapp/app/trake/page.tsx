@@ -79,12 +79,12 @@ export default function Home() {
     const BACKEND_URL = new URL("http://localhost:8000")
     const filteredAnswers = answers.filter(
         (a) =>
-            subtitleFilter === "" ||
+            (subtitleFilter === "" ||
             a.subtitles.some((s) =>
                 s.toLowerCase().includes(
                     subtitleFilter.toLowerCase()
                 ) 
-            ) && (videoFilter == "" || videoFilter.includes(a.video))
+            )) && (videoFilter == "" || videoFilter.includes(a.video))
     )
 
     const toggleSequence = (
@@ -155,7 +155,7 @@ export default function Home() {
                         </MenubarMenu>
                     </Menubar>
                     <h1 className="scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance">
-                        Video Wavelet V1 <i className="text-sm">TRAKE</i>
+                        Video Wavelet <i className="text-sm">TRAKE</i>
                     </h1>
                 </SidebarHeader>
                 <SidebarContent>

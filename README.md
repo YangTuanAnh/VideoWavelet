@@ -1,4 +1,4 @@
-# VideoWavelet V1
+# VideoWavelet
 
 ## Installation
 ```sh
