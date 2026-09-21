@@ -1,5 +1,12 @@
 # VideoWavelet
 
+## Overview
+Preprocess video by downsampling frames using PySceneDetect "using rolling average of differences in HSL colorspace combined with thresholding to detect shot changes", and subtitles using Whisper for Vietnamese speech. Frames are then encoded using SigLIP2 embeddings.
+
+VQA Module uses Gemini-3.5-Flash. TRAKE Module proposes a temporal gap regularization term for reranking. UX includes text-image search, image-image search, subtitle filtering, video reordering and filtering.
+
+Testcase generation scripts uses Gemini-3.1-Flash-Lite to sample frames at random for query descriptions, depending on KIS, VQA, TRAKE mode.
+
 ## Installation
 ```sh
 python -m venv .venv
@@ -63,6 +70,7 @@ python -m utils.gen_testcase_trake
 ```
 
 ## Webapp - GUI for KIS, VQA, TRAKE tasks and answer export
+Screenshots at [attachments/FRONTEND.md](attachments/FRONTEND.md)
 ```sh
 cd webapp
 pnpm dev
@@ -79,3 +87,9 @@ fastapi dev utils/server.py
 - [x] VQA (VLM inference, answer propagation)
 - [x] TRAKE (sequence matching, temporal penalty, sequence reorder, delete)
 - [x] Testcase scripts
+
+## Footnote
+
+All code and scripts are entirely human-written - except for shadcn's UI components. The use of LLMs are solely for testcase generation and VQA.
+
+![](https://brainmade.org/88x31-light.png)
